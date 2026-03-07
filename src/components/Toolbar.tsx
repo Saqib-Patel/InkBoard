@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import {
   Pen, Highlighter, Eraser, Undo2, Redo2, Trash2, Download,
-  Circle, Type, Square, ArrowUpRight, FileDown, Pointer,
+  Circle, Type, Square, ArrowUpRight, FileDown, Pointer, MousePointer,
 } from 'lucide-react';
-import type { Tool, BrushSize } from '@/hooks/useCanvas';
+import type { Tool, BrushSize } from '@/hooks/useFabricCanvas';
 
 const COLORS = [
   '#1a1a2e', '#e63946', '#457b9d', '#2a9d8f',
@@ -21,6 +21,7 @@ const SIZE_PX = { small: 6, medium: 10, large: 16 };
 const SIZE_VALUES = { small: 3, medium: 6, large: 12 };
 
 const TOOLS: { key: Tool; icon: typeof Pen; label: string; shortcut: string }[] = [
+  { key: 'select', icon: MousePointer, label: 'Select', shortcut: 'S' },
   { key: 'pen', icon: Pen, label: 'Pen', shortcut: 'P' },
   { key: 'highlighter', icon: Highlighter, label: 'Highlight', shortcut: 'H' },
   { key: 'eraser', icon: Eraser, label: 'Eraser', shortcut: 'E' },
