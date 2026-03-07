@@ -132,6 +132,9 @@ export function useCanvas() {
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
 
+    // Laser tool doesn't draw on canvas
+    if (tool === 'laser') return;
+
     if (tool === 'text') {
       const point = getPoint(e);
       const id = `text-${Date.now()}`;

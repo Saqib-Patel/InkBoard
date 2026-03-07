@@ -59,6 +59,7 @@ const Index = () => {
   };
 
   const getCursorClass = () => {
+    if (tool === 'laser') return 'cursor-none';
     if (tool === 'text') return 'cursor-text';
     if (tool === 'eraser') return 'cursor-cell';
     return 'cursor-crosshair';
