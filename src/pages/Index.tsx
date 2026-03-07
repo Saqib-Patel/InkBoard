@@ -32,7 +32,7 @@ const Index = () => {
     const key = e.key.toLowerCase();
     const toolMap: Record<string, Tool> = {
       p: 'pen', h: 'highlighter', e: 'eraser',
-      t: 'text', r: 'rectangle', c: 'circle', a: 'arrow',
+      t: 'text', r: 'rectangle', c: 'circle', a: 'arrow', l: 'laser',
     };
     if (toolMap[key]) { setTool(toolMap[key]); return; }
     if (key === 'g') { setShowGrid(prev => !prev); return; }
