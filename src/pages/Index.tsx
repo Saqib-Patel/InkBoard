@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useCanvas } from '@/hooks/useCanvas';
 import Toolbar from '@/components/Toolbar';
 import TextBoxOverlay from '@/components/TextBoxOverlay';
+import LaserOverlay from '@/components/LaserOverlay';
 import WelcomeTooltip from '@/components/WelcomeTooltip';
 import {
   ChevronLeft, ChevronRight, Plus, Grid3X3, Maximize, Minimize,
