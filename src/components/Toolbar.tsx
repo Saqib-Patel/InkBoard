@@ -28,6 +28,7 @@ const TOOLS: { key: Tool; icon: typeof Pen; label: string; shortcut: string }[] 
   { key: 'rectangle', icon: Square, label: 'Rectangle', shortcut: 'R' },
   { key: 'circle', icon: Circle, label: 'Circle', shortcut: 'C' },
   { key: 'arrow', icon: ArrowUpRight, label: 'Arrow', shortcut: 'A' },
+  { key: 'laser', icon: Pointer, label: 'Laser', shortcut: 'L' },
 ];
 
 interface ToolbarProps {

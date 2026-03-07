@@ -106,6 +106,8 @@ const Index = () => {
         />
       </div>
 
+      <LaserOverlay active={tool === 'laser'} />
+
       {/* Bottom bar: branding + page nav + controls */}
       <div className="fixed bottom-4 left-4 right-4 flex items-end justify-between z-30 pointer-events-none">
         {/* Brand */}

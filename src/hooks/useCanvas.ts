@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 
-export type Tool = 'pen' | 'highlighter' | 'eraser' | 'text' | 'rectangle' | 'circle' | 'arrow';
+export type Tool = 'pen' | 'highlighter' | 'eraser' | 'text' | 'rectangle' | 'circle' | 'arrow' | 'laser';
 export type BrushSize = 'small' | 'medium' | 'large';
 
 interface Point {
