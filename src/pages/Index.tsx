@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useCanvas } from '@/hooks/useCanvas';
 import Toolbar from '@/components/Toolbar';
 import TextBoxOverlay from '@/components/TextBoxOverlay';
+import LaserOverlay from '@/components/LaserOverlay';
 import WelcomeTooltip from '@/components/WelcomeTooltip';
 import {
   ChevronLeft, ChevronRight, Plus, Grid3X3, Maximize, Minimize,
@@ -31,7 +32,7 @@ const Index = () => {
     const key = e.key.toLowerCase();
     const toolMap: Record<string, Tool> = {
       p: 'pen', h: 'highlighter', e: 'eraser',
-      t: 'text', r: 'rectangle', c: 'circle', a: 'arrow',
+      t: 'text', r: 'rectangle', c: 'circle', a: 'arrow', l: 'laser',
     };
     if (toolMap[key]) { setTool(toolMap[key]); return; }
     if (key === 'g') { setShowGrid(prev => !prev); return; }
@@ -58,6 +59,7 @@ const Index = () => {
   };
 
   const getCursorClass = () => {
+    if (tool === 'laser') return 'cursor-none';
     if (tool === 'text') return 'cursor-text';
     if (tool === 'eraser') return 'cursor-cell';
     return 'cursor-crosshair';
@@ -104,6 +106,8 @@ const Index = () => {
           onDelete={deleteTextBox}
         />
       </div>
+
+      <LaserOverlay active={tool === 'laser'} />
 
       {/* Bottom bar: branding + page nav + controls */}
       <div className="fixed bottom-4 left-4 right-4 flex items-end justify-between z-30 pointer-events-none">

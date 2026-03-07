@@ -1,6 +1,6 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 
-export type Tool = 'pen' | 'highlighter' | 'eraser' | 'text' | 'rectangle' | 'circle' | 'arrow';
+export type Tool = 'pen' | 'highlighter' | 'eraser' | 'text' | 'rectangle' | 'circle' | 'arrow' | 'laser';
 export type BrushSize = 'small' | 'medium' | 'large';
 
 interface Point {
@@ -131,6 +131,9 @@ export function useCanvas() {
 
   const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
+
+    // Laser tool doesn't draw on canvas
+    if (tool === 'laser') return;
 
     if (tool === 'text') {
       const point = getPoint(e);

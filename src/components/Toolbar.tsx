@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import {
   Pen, Highlighter, Eraser, Undo2, Redo2, Trash2, Download,
-  Circle, Type, Square, ArrowUpRight, FileDown,
+  Circle, Type, Square, ArrowUpRight, FileDown, Pointer,
 } from 'lucide-react';
 import type { Tool, BrushSize } from '@/hooks/useCanvas';
 
@@ -28,6 +28,7 @@ const TOOLS: { key: Tool; icon: typeof Pen; label: string; shortcut: string }[] 
   { key: 'rectangle', icon: Square, label: 'Rectangle', shortcut: 'R' },
   { key: 'circle', icon: Circle, label: 'Circle', shortcut: 'C' },
   { key: 'arrow', icon: ArrowUpRight, label: 'Arrow', shortcut: 'A' },
+  { key: 'laser', icon: Pointer, label: 'Laser', shortcut: 'L' },
 ];
 
 interface ToolbarProps {
