@@ -1,26 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useCanvas } from '@/hooks/useCanvas';
+import { useFabricCanvas } from '@/hooks/useFabricCanvas';
 import Toolbar from '@/components/Toolbar';
-import TextBoxOverlay from '@/components/TextBoxOverlay';
 import LaserOverlay from '@/components/LaserOverlay';
 import WelcomeTooltip from '@/components/WelcomeTooltip';
 import {
   ChevronLeft, ChevronRight, Plus, Grid3X3, Maximize, Minimize,
   FolderOpen, PenTool,
 } from 'lucide-react';
-import type { Tool } from '@/hooks/useCanvas';
+import type { Tool } from '@/hooks/useFabricCanvas';
 
 const Index = () => {
   const {
     canvasRef, tool, setTool, color, setColor,
     brushSize, setBrushSize, customSize, setCustomSize,
     history, historyIndex,
-    startDrawing, draw, stopDrawing,
     undo, redo, clearCanvas, saveAsImage, saveAsPdf,
     currentPage, totalPages, goToPage, addPage,
-    textBoxes, editingTextId, updateTextBox, finishTextEditing, deleteTextBox,
     loadFromLocalStorage, hasSavedData,
-  } = useCanvas();
+  } = useFabricCanvas();
 
   const [showGrid, setShowGrid] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -28,10 +25,13 @@ const Index = () => {
 
   // Keyboard shortcuts
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    if (editingTextId) return; // Don't capture while typing text
+    // Don't capture while editing text in Fabric
+    const target = e.target as HTMLElement;
+    if (target.tagName === 'TEXTAREA' || target.tagName === 'INPUT') return;
+
     const key = e.key.toLowerCase();
     const toolMap: Record<string, Tool> = {
-      p: 'pen', h: 'highlighter', e: 'eraser',
+      s: 'select', p: 'pen', h: 'highlighter', e: 'eraser',
       t: 'text', r: 'rectangle', c: 'circle', a: 'arrow', l: 'laser',
     };
     if (toolMap[key]) { setTool(toolMap[key]); return; }
@@ -39,7 +39,7 @@ const Index = () => {
     if (key === 'f') { toggleFullscreen(); return; }
     if ((e.ctrlKey || e.metaKey) && key === 'z') { e.preventDefault(); undo(); return; }
     if ((e.ctrlKey || e.metaKey) && key === 'y') { e.preventDefault(); redo(); return; }
-  }, [setTool, undo, redo, editingTextId]);
+  }, [setTool, undo, redo]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -56,13 +56,6 @@ const Index = () => {
     } else {
       document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {});
     }
-  };
-
-  const getCursorClass = () => {
-    if (tool === 'laser') return 'cursor-none';
-    if (tool === 'text') return 'cursor-text';
-    if (tool === 'eraser') return 'cursor-cell';
-    return 'cursor-crosshair';
   };
 
   return (
@@ -87,29 +80,12 @@ const Index = () => {
         {showGrid && (
           <div className="absolute inset-0 canvas-grid pointer-events-none z-10" />
         )}
-        <canvas
-          ref={canvasRef}
-          className={`w-full h-full touch-none ${getCursorClass()}`}
-          onMouseDown={startDrawing}
-          onMouseMove={draw}
-          onMouseUp={stopDrawing}
-          onMouseLeave={stopDrawing}
-          onTouchStart={startDrawing}
-          onTouchMove={draw}
-          onTouchEnd={stopDrawing}
-        />
-        <TextBoxOverlay
-          textBoxes={textBoxes}
-          editingTextId={editingTextId}
-          onUpdate={updateTextBox}
-          onFinish={finishTextEditing}
-          onDelete={deleteTextBox}
-        />
+        <canvas ref={canvasRef} className="w-full h-full" />
       </div>
 
       <LaserOverlay active={tool === 'laser'} />
 
-      {/* Bottom bar: branding + page nav + controls */}
+      {/* Bottom bar */}
       <div className="fixed bottom-4 left-4 right-4 flex items-end justify-between z-30 pointer-events-none">
         {/* Brand */}
         <div className="flex items-center gap-2 pointer-events-auto select-none">
