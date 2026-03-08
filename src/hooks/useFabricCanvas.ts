@@ -438,9 +438,12 @@ export function useFabricCanvas() {
   const saveAsImage = useCallback(() => {
     const canvas = fc();
     if (!canvas) return;
+    const defaultName = `notecanvas-page${currentPage + 1}`;
+    const fileName = prompt('Enter file name:', defaultName);
+    if (!fileName) return;
     const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 2 });
     const link = document.createElement('a');
-    link.download = `notecanvas-page${currentPage + 1}-${Date.now()}.png`;
+    link.download = `${fileName}.png`;
     link.href = dataUrl;
     link.click();
   }, [currentPage]);
