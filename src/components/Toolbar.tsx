@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   Pen, Highlighter, Eraser, Undo2, Redo2, Trash2, Download,
   Circle, Type, Square, ArrowUpRight, FileDown, Pointer, MousePointer,
-  Triangle, Pipette, FileCode,
+  Triangle, Pipette, FileCode, StickyNote, Move, Copy,
 } from 'lucide-react';
 import type { Tool, BrushSize } from '@/hooks/useFabricCanvas';
 
