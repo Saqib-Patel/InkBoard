@@ -228,7 +228,8 @@ export function useFabricCanvas() {
       } else if (t === 'highlighter') {
         canvas.freeDrawingBrush = new PencilBrush(canvas);
         canvas.freeDrawingBrush.color = color;
-        canvas.freeDrawingBrush.width = customSize * 4;
+        canvas.freeDrawingBrush.width = Math.max(customSize * 4, 20);
+        (canvas.freeDrawingBrush as any).strokeLineCap = 'butt';
       } else {
         canvas.freeDrawingBrush = new PencilBrush(canvas);
         canvas.freeDrawingBrush.color = color;
@@ -252,25 +253,19 @@ export function useFabricCanvas() {
     }
   }, [color, customSize]);
 
-  // Highlighter opacity
+  // Post-draw: apply opacity for highlighter/pen
   useEffect(() => {
     const canvas = fc();
     if (!canvas) return;
-    const onPath = () => {
+    const onPath = (e: any) => {
+      const path = e?.path || canvas.getObjects().at(-1);
+      if (!path) return;
       if (tool === 'highlighter') {
-        const objects = canvas.getObjects();
-        const last = objects[objects.length - 1];
-        if (last) {
-          last.set({ opacity: 0.4 });
-          canvas.renderAll();
-        }
-      } else if (tool === 'pen') {
-        const objects = canvas.getObjects();
-        const last = objects[objects.length - 1];
-        if (last && opacity < 1) {
-          last.set({ opacity });
-          canvas.renderAll();
-        }
+        path.set({ opacity: 0.4, strokeLineCap: 'butt', strokeLineJoin: 'round' });
+        canvas.renderAll();
+      } else if (tool === 'pen' && opacity < 1) {
+        path.set({ opacity });
+        canvas.renderAll();
       }
     };
     canvas.on('path:created', onPath);
@@ -286,7 +281,8 @@ export function useFabricCanvas() {
       canvas.freeDrawingBrush.width = customSize;
     } else if (tool === 'highlighter') {
       canvas.freeDrawingBrush.color = color;
-      canvas.freeDrawingBrush.width = customSize * 4;
+      canvas.freeDrawingBrush.width = Math.max(customSize * 4, 20);
+      (canvas.freeDrawingBrush as any).strokeLineCap = 'butt';
     } else if (tool === 'eraser') {
       canvas.freeDrawingBrush.color = '#ffffff';
       canvas.freeDrawingBrush.width = customSize * 3;
