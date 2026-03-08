@@ -338,40 +338,6 @@ export function useFabricCanvas() {
     };
   }, [addImageToCanvas]);
 
-  // --- Infinite canvas (mouse wheel pan + zoom) ---
-  useEffect(() => {
-    const canvas = fc();
-    if (!canvas) return;
-    // Fabric creates an upper-canvas that receives all pointer events
-    const upperCanvas = canvas.upperCanvasEl || canvas.getElement();
-    if (!upperCanvas) return;
-
-    const handleWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (e.ctrlKey || e.metaKey) {
-        // Pinch zoom
-        const delta = e.deltaY;
-        let newZoom = canvas.getZoom() * (1 - delta / 300);
-        newZoom = Math.max(0.1, Math.min(5, newZoom));
-        const rect = upperCanvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        canvas.zoomToPoint(new Point(x, y), newZoom);
-        setZoom(newZoom);
-      } else {
-        // Pan
-        const vpt = [...canvas.viewportTransform] as typeof canvas.viewportTransform;
-        vpt[4] -= e.deltaX || 0;
-        vpt[5] -= e.deltaY || 0;
-        canvas.setViewportTransform(vpt);
-      }
-      canvas.renderAll();
-    };
-    upperCanvas.addEventListener('wheel', handleWheel, { passive: false });
-    return () => { upperCanvas.removeEventListener('wheel', handleWheel); };
-  }, []);
 
   // --- Stylus pressure sensitivity ---
   useEffect(() => {
