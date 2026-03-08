@@ -577,11 +577,4 @@ export function useFabricCanvas() {
     deleteSelected,
   };
 }
-
-// Dummy for selectAll - we'll handle it inline in Index
-function await_import_ActiveSelection() {
-  // Fabric v6 ActiveSelection
-  return class {
-    constructor(_objs: any[], _opts: any) {}
-  };
 }
