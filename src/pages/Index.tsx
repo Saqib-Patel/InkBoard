@@ -124,6 +124,7 @@ const Index = () => {
 
   return (
     <ErrorBoundary>
+      {showLoading && <LoadingScreen onFinish={() => setShowLoading(false)} />}
       <div className={`fixed inset-0 canvas-gradient overflow-hidden transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}>
         <WelcomeTooltip />
         <KeyboardCheatsheet />
