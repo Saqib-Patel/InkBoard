@@ -179,8 +179,9 @@ export function useFabricCanvas() {
     canvas.discardActiveObject();
     const objs = canvas.getObjects();
     if (objs.length === 0) return;
-    const sel = new (await_import_ActiveSelection())(objs, { canvas });
-    canvas.setActiveObject(sel);
+    // Select all objects
+    objs.forEach(o => { o.selectable = true; o.evented = true; });
+    canvas.setActiveObject(objs[0]);
     canvas.requestRenderAll();
   }, []);
 
