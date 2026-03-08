@@ -253,25 +253,19 @@ export function useFabricCanvas() {
     }
   }, [color, customSize]);
 
-  // Highlighter opacity
+  // Post-draw: apply opacity for highlighter/pen
   useEffect(() => {
     const canvas = fc();
     if (!canvas) return;
-    const onPath = () => {
+    const onPath = (e: any) => {
+      const path = e?.path || canvas.getObjects().at(-1);
+      if (!path) return;
       if (tool === 'highlighter') {
-        const objects = canvas.getObjects();
-        const last = objects[objects.length - 1];
-        if (last) {
-          last.set({ opacity: 0.4 });
-          canvas.renderAll();
-        }
-      } else if (tool === 'pen') {
-        const objects = canvas.getObjects();
-        const last = objects[objects.length - 1];
-        if (last && opacity < 1) {
-          last.set({ opacity });
-          canvas.renderAll();
-        }
+        path.set({ opacity: 0.4, strokeLineCap: 'butt', strokeLineJoin: 'round' });
+        canvas.renderAll();
+      } else if (tool === 'pen' && opacity < 1) {
+        path.set({ opacity });
+        canvas.renderAll();
       }
     };
     canvas.on('path:created', onPath);
