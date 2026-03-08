@@ -7,6 +7,7 @@ import SettingsPanel from '@/components/SettingsPanel';
 import KeyboardCheatsheet from '@/components/KeyboardCheatsheet';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Minimap from '@/components/Minimap';
+import CanvasScrollbars from '@/components/CanvasScrollbars';
 import type { GridStyle } from '@/components/SettingsPanel';
 import {
   ChevronLeft, ChevronRight, Plus, Maximize, Minimize,
