@@ -438,17 +438,19 @@ export function useFabricCanvas() {
   const setupPanTool = (canvas: Canvas) => {
     canvas.on('mouse:down', (opt: TPointerEventInfo) => {
       isPanning.current = true;
-      panStart.current = { x: opt.e.clientX, y: opt.e.clientY };
+      const ev = opt.e instanceof TouchEvent ? opt.e.touches[0] : opt.e;
+      panStart.current = { x: ev.clientX, y: ev.clientY };
       canvas.defaultCursor = 'grabbing';
     });
     canvas.on('mouse:move', (opt: TPointerEventInfo) => {
       if (!isPanning.current || !panStart.current) return;
+      const ev = opt.e instanceof TouchEvent ? opt.e.touches[0] : opt.e;
       const vpt = canvas.viewportTransform;
       if (vpt) {
-        vpt[4] += opt.e.clientX - panStart.current.x;
-        vpt[5] += opt.e.clientY - panStart.current.y;
+        vpt[4] += ev.clientX - panStart.current.x;
+        vpt[5] += ev.clientY - panStart.current.y;
         canvas.setViewportTransform(vpt);
-        panStart.current = { x: opt.e.clientX, y: opt.e.clientY };
+        panStart.current = { x: ev.clientX, y: ev.clientY };
       }
     });
     canvas.on('mouse:up', () => {
