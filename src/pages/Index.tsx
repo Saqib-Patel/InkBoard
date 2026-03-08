@@ -32,6 +32,7 @@ const Index = () => {
     copySelected, pasteClipboard, duplicateSelected,
     canvasBgColor, changeCanvasBg,
     getMinimapDataUrl,
+    getViewportTransform, panBy,
   } = useFabricCanvas();
 
   const [gridStyle, setGridStyle] = useState<GridStyle>('plain');
