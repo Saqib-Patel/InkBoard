@@ -11,12 +11,17 @@ const SHORTCUTS = [
   ['C', 'Circle'],
   ['A', 'Arrow'],
   ['L', 'Laser pointer'],
+  ['N', 'Sticky note'],
+  ['Space', 'Pan canvas'],
   ['G', 'Toggle grid'],
   ['F', 'Fullscreen'],
   ['?', 'Shortcut help'],
   ['Ctrl+Z', 'Undo'],
   ['Ctrl+Shift+Z', 'Redo'],
   ['Ctrl+S', 'Save'],
+  ['Ctrl+C', 'Copy'],
+  ['Ctrl+V', 'Paste'],
+  ['Ctrl+D', 'Duplicate'],
   ['Ctrl+A', 'Select all'],
   ['Delete', 'Delete selected'],
   ['Ctrl+]', 'Next page'],
@@ -24,6 +29,8 @@ const SHORTCUTS = [
   ['Ctrl+=', 'Zoom in'],
   ['Ctrl+-', 'Zoom out'],
   ['Ctrl+0', 'Reset zoom'],
+  ['Scroll', 'Pan canvas'],
+  ['Ctrl+Scroll', 'Zoom'],
 ];
 
 export default function KeyboardCheatsheet() {
