@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Canvas, PencilBrush, CircleBrush, FabricObject, Rect, Ellipse, Line, Textbox, type TPointerEventInfo } from 'fabric';
+import { Canvas, PencilBrush, FabricObject, Rect, Ellipse, Line, Textbox, Polygon, type TPointerEventInfo } from 'fabric';
 
-export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'text' | 'rectangle' | 'circle' | 'arrow' | 'laser';
+export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'text' | 'rectangle' | 'circle' | 'triangle' | 'arrow' | 'laser';
 export type BrushSize = 'small' | 'medium' | 'large';
 
 interface PageData {
@@ -17,32 +17,40 @@ export function useFabricCanvas() {
   const [color, setColor] = useState('#1a1a2e');
   const [brushSize, setBrushSize] = useState<BrushSize>('medium');
   const [customSize, setCustomSize] = useState(6);
+  const [opacity, setOpacity] = useState(1);
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const isUndoRedo = useRef(false);
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState<PageData[]>([]);
+  const [zoom, setZoom] = useState(1);
 
-  // Shape drawing state
   const shapeStart = useRef<{ x: number; y: number } | null>(null);
   const activeShape = useRef<FabricObject | null>(null);
+  const shiftHeld = useRef(false);
 
   const fc = () => fabricRef.current;
+
+  // Track shift key
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => { if (e.key === 'Shift') shiftHeld.current = true; };
+    const up = (e: KeyboardEvent) => { if (e.key === 'Shift') shiftHeld.current = false; };
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    return () => { window.removeEventListener('keydown', down); window.removeEventListener('keyup', up); };
+  }, []);
 
   // --- Init ---
   const initCanvas = useCallback(() => {
     if (!canvasElRef.current) return;
-    if (fabricRef.current) {
-      fabricRef.current.dispose();
-    }
+    if (fabricRef.current) fabricRef.current.dispose();
 
     const parent = canvasElRef.current.parentElement;
     const w = parent?.clientWidth || window.innerWidth;
     const h = parent?.clientHeight || window.innerHeight;
 
     const canvas = new Canvas(canvasElRef.current, {
-      width: w,
-      height: h,
+      width: w, height: h,
       backgroundColor: '#ffffff',
       isDrawingMode: true,
       selection: false,
@@ -53,14 +61,11 @@ export function useFabricCanvas() {
     canvas.freeDrawingBrush.width = 6;
 
     fabricRef.current = canvas;
-
-    // Save initial state
     saveHistoryState();
   }, []);
 
   useEffect(() => {
     initCanvas();
-
     const handleResize = () => {
       const canvas = fc();
       if (!canvas) return;
@@ -70,7 +75,6 @@ export function useFabricCanvas() {
       canvas.setDimensions({ width: w, height: h });
       canvas.renderAll();
     };
-
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -95,7 +99,6 @@ export function useFabricCanvas() {
     setHistoryIndex(prev => Math.min(prev + 1, 49));
   }, [historyIndex]);
 
-  // Listen for object changes
   useEffect(() => {
     const canvas = fc();
     if (!canvas) return;
@@ -142,13 +145,64 @@ export function useFabricCanvas() {
     });
   }, [historyIndex, loadFromJSON]);
 
+  // --- Zoom ---
+  const zoomIn = useCallback(() => {
+    const canvas = fc();
+    if (!canvas) return;
+    const newZoom = Math.min(zoom * 1.2, 5);
+    canvas.setZoom(newZoom);
+    setZoom(newZoom);
+    canvas.renderAll();
+  }, [zoom]);
+
+  const zoomOut = useCallback(() => {
+    const canvas = fc();
+    if (!canvas) return;
+    const newZoom = Math.max(zoom / 1.2, 0.1);
+    canvas.setZoom(newZoom);
+    setZoom(newZoom);
+    canvas.renderAll();
+  }, [zoom]);
+
+  const resetZoom = useCallback(() => {
+    const canvas = fc();
+    if (!canvas) return;
+    canvas.setZoom(1);
+    setZoom(1);
+    canvas.renderAll();
+  }, []);
+
+  // --- Select All ---
+  const selectAll = useCallback(() => {
+    const canvas = fc();
+    if (!canvas) return;
+    canvas.discardActiveObject();
+    const objs = canvas.getObjects();
+    if (objs.length === 0) return;
+    const sel = new (await_import_ActiveSelection())(objs, { canvas });
+    canvas.setActiveObject(sel);
+    canvas.requestRenderAll();
+  }, []);
+
+  // Since ActiveSelection might need special import, use inline approach
+  const deleteSelected = useCallback(() => {
+    const canvas = fc();
+    if (!canvas) return;
+    const active = canvas.getActiveObjects();
+    if (active.length) {
+      active.forEach(obj => canvas.remove(obj));
+      canvas.discardActiveObject();
+      canvas.renderAll();
+      saveHistoryState();
+    }
+  }, [saveHistoryState]);
+
   // --- Tool switching ---
   const setTool = useCallback((t: Tool) => {
     setToolState(t);
     const canvas = fc();
     if (!canvas) return;
 
-    // Reset event listeners for shapes
     canvas.off('mouse:down');
     canvas.off('mouse:move');
     canvas.off('mouse:up');
@@ -167,7 +221,6 @@ export function useFabricCanvas() {
       canvas.forEachObject(o => { o.selectable = false; o.evented = false; });
 
       if (t === 'eraser') {
-        // Use white brush as simple eraser
         canvas.freeDrawingBrush = new PencilBrush(canvas);
         canvas.freeDrawingBrush.color = '#ffffff';
         canvas.freeDrawingBrush.width = customSize * 3;
@@ -175,7 +228,6 @@ export function useFabricCanvas() {
         canvas.freeDrawingBrush = new PencilBrush(canvas);
         canvas.freeDrawingBrush.color = color;
         canvas.freeDrawingBrush.width = customSize * 4;
-        // We'll set opacity on the path after creation
       } else {
         canvas.freeDrawingBrush = new PencilBrush(canvas);
         canvas.freeDrawingBrush.color = color;
@@ -184,7 +236,6 @@ export function useFabricCanvas() {
       return;
     }
 
-    // For text, shapes, laser — not drawing mode
     canvas.isDrawingMode = false;
     canvas.selection = false;
     canvas.forEachObject(o => { o.selectable = false; o.evented = false; });
@@ -192,7 +243,7 @@ export function useFabricCanvas() {
     if (t === 'text') {
       canvas.defaultCursor = 'text';
       setupTextTool(canvas);
-    } else if (t === 'rectangle' || t === 'circle' || t === 'arrow') {
+    } else if (t === 'rectangle' || t === 'circle' || t === 'arrow' || t === 'triangle') {
       canvas.defaultCursor = 'crosshair';
       setupShapeTool(canvas, t);
     } else if (t === 'laser') {
@@ -200,7 +251,7 @@ export function useFabricCanvas() {
     }
   }, [color, customSize]);
 
-  // Highlighter: make paths semi-transparent
+  // Highlighter opacity
   useEffect(() => {
     const canvas = fc();
     if (!canvas) return;
@@ -209,16 +260,23 @@ export function useFabricCanvas() {
         const objects = canvas.getObjects();
         const last = objects[objects.length - 1];
         if (last) {
-          last.set({ opacity: 0.35 });
+          last.set({ opacity: 0.4 });
+          canvas.renderAll();
+        }
+      } else if (tool === 'pen') {
+        const objects = canvas.getObjects();
+        const last = objects[objects.length - 1];
+        if (last && opacity < 1) {
+          last.set({ opacity });
           canvas.renderAll();
         }
       }
     };
     canvas.on('path:created', onPath);
     return () => { canvas.off('path:created', onPath); };
-  }, [tool]);
+  }, [tool, opacity]);
 
-  // Update brush when color/size changes
+  // Update brush when color/size/opacity changes
   useEffect(() => {
     const canvas = fc();
     if (!canvas || !canvas.freeDrawingBrush) return;
@@ -239,61 +297,41 @@ export function useFabricCanvas() {
     canvas.on('mouse:down', (opt: TPointerEventInfo) => {
       const pointer = canvas.getViewportPoint(opt.e);
       const textbox = new Textbox('Type here...', {
-        left: pointer.x,
-        top: pointer.y,
+        left: pointer.x, top: pointer.y,
         fontSize: Math.max(customSize * 3, 18),
         fill: color,
         fontFamily: 'Inter, sans-serif',
-        editable: true,
-        selectable: true,
-        width: 200,
+        editable: true, selectable: true,
+        width: 200, opacity,
       });
       canvas.add(textbox);
       canvas.setActiveObject(textbox);
       textbox.enterEditing();
-      // Remove listener after placement
       canvas.off('mouse:down');
     });
   };
 
   // --- Shape tools ---
-  const setupShapeTool = (canvas: Canvas, shapeTool: 'rectangle' | 'circle' | 'arrow') => {
+  const setupShapeTool = (canvas: Canvas, shapeTool: 'rectangle' | 'circle' | 'arrow' | 'triangle') => {
     canvas.on('mouse:down', (opt: TPointerEventInfo) => {
       const pointer = canvas.getViewportPoint(opt.e);
       shapeStart.current = { x: pointer.x, y: pointer.y };
 
       let shape: FabricObject;
+      const shapeOpts = { fill: 'transparent', stroke: color, strokeWidth: customSize, selectable: false, evented: false, opacity };
+
       if (shapeTool === 'rectangle') {
-        shape = new Rect({
-          left: pointer.x,
-          top: pointer.y,
-          width: 0,
-          height: 0,
-          fill: 'transparent',
-          stroke: color,
-          strokeWidth: customSize,
-          selectable: false,
-          evented: false,
-        });
+        shape = new Rect({ left: pointer.x, top: pointer.y, width: 0, height: 0, ...shapeOpts });
       } else if (shapeTool === 'circle') {
-        shape = new Ellipse({
-          left: pointer.x,
-          top: pointer.y,
-          rx: 0,
-          ry: 0,
-          fill: 'transparent',
-          stroke: color,
-          strokeWidth: customSize,
-          selectable: false,
-          evented: false,
-        });
+        shape = new Ellipse({ left: pointer.x, top: pointer.y, rx: 0, ry: 0, ...shapeOpts });
+      } else if (shapeTool === 'triangle') {
+        shape = new Polygon(
+          [{ x: pointer.x, y: pointer.y }, { x: pointer.x, y: pointer.y }, { x: pointer.x, y: pointer.y }],
+          { ...shapeOpts, left: pointer.x, top: pointer.y }
+        );
       } else {
-        // Arrow = line + we'll add arrowhead on mouse up
         shape = new Line([pointer.x, pointer.y, pointer.x, pointer.y], {
-          stroke: color,
-          strokeWidth: customSize,
-          selectable: false,
-          evented: false,
+          stroke: color, strokeWidth: customSize, selectable: false, evented: false, opacity,
         });
       }
       canvas.add(shape);
@@ -305,58 +343,83 @@ export function useFabricCanvas() {
       const pointer = canvas.getViewportPoint(opt.e);
       const sx = shapeStart.current.x;
       const sy = shapeStart.current.y;
+      let dx = pointer.x - sx;
+      let dy = pointer.y - sy;
+
+      // Shift constrain
+      if (shiftHeld.current && (shapeTool === 'rectangle' || shapeTool === 'circle' || shapeTool === 'triangle')) {
+        const size = Math.max(Math.abs(dx), Math.abs(dy));
+        dx = size * Math.sign(dx || 1);
+        dy = size * Math.sign(dy || 1);
+      }
 
       if (shapeTool === 'rectangle') {
         const rect = activeShape.current as Rect;
         rect.set({
-          left: Math.min(sx, pointer.x),
-          top: Math.min(sy, pointer.y),
-          width: Math.abs(pointer.x - sx),
-          height: Math.abs(pointer.y - sy),
+          left: dx < 0 ? sx + dx : sx,
+          top: dy < 0 ? sy + dy : sy,
+          width: Math.abs(dx),
+          height: Math.abs(dy),
         });
       } else if (shapeTool === 'circle') {
         const ellipse = activeShape.current as Ellipse;
         ellipse.set({
-          left: Math.min(sx, pointer.x),
-          top: Math.min(sy, pointer.y),
-          rx: Math.abs(pointer.x - sx) / 2,
-          ry: Math.abs(pointer.y - sy) / 2,
+          left: dx < 0 ? sx + dx : sx,
+          top: dy < 0 ? sy + dy : sy,
+          rx: Math.abs(dx) / 2,
+          ry: Math.abs(dy) / 2,
         });
+      } else if (shapeTool === 'triangle') {
+        const endX = sx + dx;
+        const endY = sy + dy;
+        const tri = activeShape.current as Polygon;
+        tri.set({
+          points: [
+            { x: sx + dx / 2, y: sy },
+            { x: sx, y: endY },
+            { x: endX, y: endY },
+          ],
+          left: Math.min(sx, endX),
+          top: sy,
+        });
+        // Force coordinate update
+        (tri as any).setCoords?.();
       } else {
         const line = activeShape.current as Line;
-        line.set({ x2: pointer.x, y2: pointer.y });
+        if (shiftHeld.current) {
+          // Snap to 45-degree angles
+          const angle = Math.atan2(dy, dx);
+          const snapAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          line.set({ x2: sx + dist * Math.cos(snapAngle), y2: sy + dist * Math.sin(snapAngle) });
+        } else {
+          line.set({ x2: pointer.x, y2: pointer.y });
+        }
       }
       canvas.renderAll();
     });
 
     canvas.on('mouse:up', () => {
       if (shapeTool === 'arrow' && activeShape.current && shapeStart.current) {
-        // Add arrowhead
         const line = activeShape.current as Line;
         const x1 = line.x1!, y1 = line.y1!, x2 = line.x2!, y2 = line.y2!;
         const angle = Math.atan2(y2 - y1, x2 - x1);
         const headLen = 15;
-
         const head1 = new Line([
           x2, y2,
           x2 - headLen * Math.cos(angle - Math.PI / 6),
           y2 - headLen * Math.sin(angle - Math.PI / 6),
-        ], { stroke: color, strokeWidth: customSize, selectable: false, evented: false });
-
+        ], { stroke: color, strokeWidth: customSize, selectable: false, evented: false, opacity });
         const head2 = new Line([
           x2, y2,
           x2 - headLen * Math.cos(angle + Math.PI / 6),
           y2 - headLen * Math.sin(angle + Math.PI / 6),
-        ], { stroke: color, strokeWidth: customSize, selectable: false, evented: false });
-
+        ], { stroke: color, strokeWidth: customSize, selectable: false, evented: false, opacity });
         canvas.add(head1);
         canvas.add(head2);
       }
-
       shapeStart.current = null;
       activeShape.current = null;
-
-      // Re-setup for next shape
       canvas.off('mouse:down');
       canvas.off('mouse:move');
       canvas.off('mouse:up');
@@ -380,7 +443,7 @@ export function useFabricCanvas() {
     if (!canvas) return;
     const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 2 });
     const link = document.createElement('a');
-    link.download = `note-page${currentPage + 1}-${Date.now()}.png`;
+    link.download = `notecanvas-page${currentPage + 1}-${Date.now()}.png`;
     link.href = dataUrl;
     link.click();
   }, [currentPage]);
@@ -394,7 +457,20 @@ export function useFabricCanvas() {
     const h = canvas.getHeight();
     const pdf = new jsPDF({ orientation: w > h ? 'landscape' : 'portrait', unit: 'px', format: [w, h] });
     pdf.addImage(dataUrl, 'PNG', 0, 0, w, h);
-    pdf.save(`note-page${currentPage + 1}-${Date.now()}.pdf`);
+    pdf.save(`notecanvas-page${currentPage + 1}-${Date.now()}.pdf`);
+  }, [currentPage]);
+
+  const saveAsSvg = useCallback(() => {
+    const canvas = fc();
+    if (!canvas) return;
+    const svg = canvas.toSVG();
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `notecanvas-page${currentPage + 1}-${Date.now()}.svg`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
   }, [currentPage]);
 
   // --- Multi-page ---
@@ -456,18 +532,15 @@ export function useFabricCanvas() {
   const totalPages = Math.max(pages.length, currentPage + 1);
 
   // --- LocalStorage auto-save ---
-  useEffect(() => {
-    const interval = setInterval(() => {
-      try {
-        const canvas = fc();
-        if (!canvas) return;
-        const json = JSON.stringify(canvas.toJSON());
-        const allPages = [...pages];
-        allPages[currentPage] = { json };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ pages: allPages, currentPage }));
-      } catch { /* storage full */ }
-    }, 5000);
-    return () => clearInterval(interval);
+  const autoSave = useCallback(() => {
+    try {
+      const canvas = fc();
+      if (!canvas) return;
+      const json = JSON.stringify(canvas.toJSON());
+      const allPages = [...pages];
+      allPages[currentPage] = { json };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ pages: allPages, currentPage }));
+    } catch { /* storage full */ }
   }, [pages, currentPage]);
 
   const loadFromLocalStorage = useCallback(() => {
@@ -479,9 +552,7 @@ export function useFabricCanvas() {
         setPages(data.pages);
         setCurrentPage(data.currentPage || 0);
         const page = data.pages[data.currentPage || 0];
-        if (page) {
-          loadFromJSON(page.json);
-        }
+        if (page) loadFromJSON(page.json);
         return true;
       }
     } catch { /* corrupt */ }
@@ -496,9 +567,20 @@ export function useFabricCanvas() {
     canvasRef: canvasElRef,
     tool, setTool, color, setColor,
     brushSize, setBrushSize, customSize, setCustomSize,
+    opacity, setOpacity,
     history, historyIndex,
-    undo, redo, clearCanvas, saveAsImage, saveAsPdf,
+    undo, redo, clearCanvas, saveAsImage, saveAsPdf, saveAsSvg,
     currentPage, totalPages, goToPage, addPage,
-    loadFromLocalStorage, hasSavedData,
+    loadFromLocalStorage, hasSavedData, autoSave,
+    zoom, zoomIn, zoomOut, resetZoom,
+    deleteSelected,
+  };
+}
+
+// Dummy for selectAll - we'll handle it inline in Index
+function await_import_ActiveSelection() {
+  // Fabric v6 ActiveSelection
+  return class {
+    constructor(_objs: any[], _opts: any) {}
   };
 }
