@@ -466,11 +466,14 @@ export function useFabricCanvas() {
   const saveAsSvg = useCallback(() => {
     const canvas = fc();
     if (!canvas) return;
+    const defaultName = `notecanvas-page${currentPage + 1}`;
+    const fileName = prompt('Enter file name:', defaultName);
+    if (!fileName) return;
     const svg = canvas.toSVG();
     const blob = new Blob([svg], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.download = `notecanvas-page${currentPage + 1}-${Date.now()}.svg`;
+    link.download = `${fileName}.svg`;
     link.href = url;
     link.click();
     URL.revokeObjectURL(url);
