@@ -281,7 +281,8 @@ export function useFabricCanvas() {
       canvas.freeDrawingBrush.width = customSize;
     } else if (tool === 'highlighter') {
       canvas.freeDrawingBrush.color = color;
-      canvas.freeDrawingBrush.width = customSize * 4;
+      canvas.freeDrawingBrush.width = Math.max(customSize * 4, 20);
+      (canvas.freeDrawingBrush as any).strokeLineCap = 'butt';
     } else if (tool === 'eraser') {
       canvas.freeDrawingBrush.color = '#ffffff';
       canvas.freeDrawingBrush.width = customSize * 3;
