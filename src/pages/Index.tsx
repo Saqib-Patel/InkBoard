@@ -42,7 +42,7 @@ const Index = () => {
   const [loaded, setLoaded] = useState(false);
   const [autoSaveInterval, setAutoSaveInterval] = useState(30);
   const [showBgPicker, setShowBgPicker] = useState(false);
-
+  const [showLoading, setShowLoading] = useState(true);
   // Dark mode
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
