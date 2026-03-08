@@ -26,6 +26,8 @@ const TOOLS: { key: Tool; icon: typeof Pen; label: string; shortcut: string }[] 
   { key: 'triangle', icon: Triangle, label: 'Triangle', shortcut: 'V' },
   { key: 'arrow', icon: ArrowUpRight, label: 'Arrow', shortcut: 'A' },
   { key: 'laser', icon: Pointer, label: 'Laser', shortcut: 'L' },
+  { key: 'sticky', icon: StickyNote, label: 'Sticky Note', shortcut: 'N' },
+  { key: 'pan', icon: Move, label: 'Pan', shortcut: 'Space' },
 ];
 
 interface ToolbarProps {
