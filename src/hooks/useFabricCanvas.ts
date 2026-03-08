@@ -1,5 +1,5 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Canvas, PencilBrush, FabricObject, Rect, Ellipse, Line, Textbox, Polygon, FabricImage, Shadow, type TPointerEventInfo } from 'fabric';
+import { Canvas, PencilBrush, FabricObject, Rect, Ellipse, Line, Textbox, Polygon, FabricImage, Shadow, Point, type TPointerEventInfo } from 'fabric';
 
 export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'text' | 'rectangle' | 'circle' | 'triangle' | 'arrow' | 'laser' | 'sticky' | 'pan';
 export type BrushSize = 'small' | 'medium' | 'large';
