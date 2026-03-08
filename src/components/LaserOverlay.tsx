@@ -55,17 +55,17 @@ export default function LaserOverlay({ active }: LaserOverlayProps) {
         ctx.beginPath();
         ctx.moveTo(p0.x, p0.y);
         ctx.lineTo(p1.x, p1.y);
-        ctx.strokeStyle = `rgba(220, 20, 20, ${alpha * 0.9})`;
-        ctx.lineWidth = 4;
+        ctx.strokeStyle = `rgba(220, 20, 20, ${alpha * 0.85})`;
+        ctx.lineWidth = 1.5;
         ctx.lineCap = 'round';
         ctx.stroke();
 
-        // Outer glow on trail
+        // Subtle outer glow
         ctx.beginPath();
         ctx.moveTo(p0.x, p0.y);
         ctx.lineTo(p1.x, p1.y);
-        ctx.strokeStyle = `rgba(255, 50, 30, ${alpha * 0.35})`;
-        ctx.lineWidth = 14;
+        ctx.strokeStyle = `rgba(255, 50, 30, ${alpha * 0.2})`;
+        ctx.lineWidth = 5;
         ctx.stroke();
       }
     }
