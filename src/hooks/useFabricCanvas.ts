@@ -916,6 +916,21 @@ export function useFabricCanvas() {
     } catch { return ''; }
   }, []);
 
+  const getViewportTransform = useCallback(() => {
+    const canvas = fc();
+    return canvas ? [...canvas.viewportTransform] : null;
+  }, []);
+
+  const panBy = useCallback((dx: number, dy: number) => {
+    const canvas = fc();
+    if (!canvas) return;
+    const vpt = [...canvas.viewportTransform] as typeof canvas.viewportTransform;
+    vpt[4] += dx;
+    vpt[5] += dy;
+    canvas.setViewportTransform(vpt);
+    canvas.renderAll();
+  }, []);
+
   return {
     canvasRef: canvasElRef,
     tool, setTool, color, setColor,
@@ -931,5 +946,6 @@ export function useFabricCanvas() {
     addImageToCanvas,
     canvasBgColor, changeCanvasBg,
     getMinimapDataUrl,
+    getViewportTransform, panBy,
   };
 }

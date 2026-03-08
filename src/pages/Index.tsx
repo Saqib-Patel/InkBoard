@@ -7,6 +7,7 @@ import SettingsPanel from '@/components/SettingsPanel';
 import KeyboardCheatsheet from '@/components/KeyboardCheatsheet';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Minimap from '@/components/Minimap';
+import CanvasScrollbars from '@/components/CanvasScrollbars';
 import type { GridStyle } from '@/components/SettingsPanel';
 import {
   ChevronLeft, ChevronRight, Plus, Maximize, Minimize,
@@ -31,6 +32,7 @@ const Index = () => {
     copySelected, pasteClipboard, duplicateSelected,
     canvasBgColor, changeCanvasBg,
     getMinimapDataUrl,
+    getViewportTransform, panBy,
   } = useFabricCanvas();
 
   const [gridStyle, setGridStyle] = useState<GridStyle>('plain');
@@ -153,6 +155,7 @@ const Index = () => {
 
         <LaserOverlay active={tool === 'laser'} />
         <Minimap getDataUrl={getMinimapDataUrl} zoom={zoom} />
+        <CanvasScrollbars zoom={zoom} viewportTransform={getViewportTransform()} onPan={panBy} />
 
         {/* Bottom bar */}
         <div className="fixed bottom-4 left-4 right-4 flex items-end justify-between z-30 pointer-events-none">
