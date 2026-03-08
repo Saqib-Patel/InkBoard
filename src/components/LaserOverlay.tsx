@@ -11,8 +11,8 @@ interface LaserOverlayProps {
 }
 
 const TRAIL_DURATION = 1500;
-const CORE_RADIUS = 7;
-const GLOW_RADIUS = 28;
+const CORE_RADIUS = 4;
+const GLOW_RADIUS = 14;
 
 export default function LaserOverlay({ active }: LaserOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
