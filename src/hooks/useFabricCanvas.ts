@@ -228,7 +228,8 @@ export function useFabricCanvas() {
       } else if (t === 'highlighter') {
         canvas.freeDrawingBrush = new PencilBrush(canvas);
         canvas.freeDrawingBrush.color = color;
-        canvas.freeDrawingBrush.width = customSize * 4;
+        canvas.freeDrawingBrush.width = Math.max(customSize * 4, 20);
+        (canvas.freeDrawingBrush as any).strokeLineCap = 'butt';
       } else {
         canvas.freeDrawingBrush = new PencilBrush(canvas);
         canvas.freeDrawingBrush.color = color;
