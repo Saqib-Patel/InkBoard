@@ -804,7 +804,7 @@ export function useFabricCanvas() {
   const saveAsSvg = useCallback(() => {
     const canvas = fc();
     if (!canvas) return;
-    const defaultName = `notecanvas-page${currentPage + 1}`;
+    const defaultName = `inkboard-page${currentPage + 1}`;
     const fileName = prompt('Enter file name:', defaultName);
     if (!fileName) return;
     const svg = canvas.toSVG();
