@@ -44,30 +44,39 @@ export default function LaserOverlay({ active }: LaserOverlayProps) {
 
     ctx.clearRect(0, 0, c.width, c.height);
 
-    // Draw trail
-    if (points.current.length > 1) {
-      for (let i = 1; i < points.current.length; i++) {
-        const p0 = points.current[i - 1];
-        const p1 = points.current[i];
-        const age = now - p1.time;
-        const alpha = Math.max(0, 1 - age / TRAIL_DURATION);
-
-        ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        ctx.lineTo(p1.x, p1.y);
-        ctx.strokeStyle = `rgba(220, 20, 20, ${alpha * 0.85})`;
-        ctx.lineWidth = 1.5;
-        ctx.lineCap = 'round';
-        ctx.stroke();
-
-        // Subtle outer glow
-        ctx.beginPath();
-        ctx.moveTo(p0.x, p0.y);
-        ctx.lineTo(p1.x, p1.y);
-        ctx.strokeStyle = `rgba(255, 50, 30, ${alpha * 0.2})`;
-        ctx.lineWidth = 5;
-        ctx.stroke();
+    // Draw smooth trail using quadratic curves
+    const pts = points.current;
+    if (pts.length > 1) {
+      // Outer glow pass
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i].x + pts[i + 1].x) / 2;
+        const my = (pts[i].y + pts[i + 1].y) / 2;
+        ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
       }
+      const last = pts[pts.length - 1];
+      ctx.lineTo(last.x, last.y);
+      const avgAge = now - pts[Math.floor(pts.length / 2)].time;
+      const glowAlpha = Math.max(0, 1 - avgAge / TRAIL_DURATION);
+      ctx.strokeStyle = `rgba(255, 50, 30, ${glowAlpha * 0.15})`;
+      ctx.lineWidth = 4;
+      ctx.stroke();
+
+      // Core trail pass
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let i = 1; i < pts.length - 1; i++) {
+        const mx = (pts[i].x + pts[i + 1].x) / 2;
+        const my = (pts[i].y + pts[i + 1].y) / 2;
+        ctx.quadraticCurveTo(pts[i].x, pts[i].y, mx, my);
+      }
+      ctx.lineTo(last.x, last.y);
+      ctx.strokeStyle = `rgba(220, 20, 20, ${glowAlpha * 0.7})`;
+      ctx.lineWidth = 1.2;
+      ctx.stroke();
     }
 
     // Draw laser dot at current position
