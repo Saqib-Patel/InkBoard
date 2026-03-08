@@ -69,6 +69,18 @@
     --border: 220 15% 20%;
     --input: 220 15% 20%;
     --ring: 220 70% 55%;
+
+    --canvas-bg-from: 224 20% 10%;
+    --canvas-bg-to: 224 20% 8%;
+    --toolbar-bg: 224 20% 14% / 0.9;
+    --toolbar-border: 220 15% 22% / 0.5;
+    --toolbar-shadow: 0 0% 0% / 0.3;
+    --tool-active: 220 70% 55%;
+    --tool-active-foreground: 0 0% 100%;
+    --tool-hover: 220 15% 18%;
+    --grid-color: 220 15% 25%;
+    --brand-text: 215 20% 65%;
+
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -153,9 +165,21 @@
     opacity: 1;
   }
 
-  .canvas-grid {
+  .canvas-grid-dots {
     background-image: radial-gradient(circle, hsl(var(--grid-color)) 1px, transparent 1px);
     background-size: 24px 24px;
+  }
+
+  .canvas-grid-lines {
+    background-image:
+      linear-gradient(hsl(var(--grid-color) / 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--grid-color) / 0.3) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .canvas-grid-ruled {
+    background-image: linear-gradient(hsl(var(--grid-color) / 0.25) 1px, transparent 1px);
+    background-size: 100% 32px;
   }
 
   .brand-text {

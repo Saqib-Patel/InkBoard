@@ -1,0 +1,16 @@
+{
+  "name": "NoteCanvas",
+  "short_name": "NoteCanvas",
+  "description": "A modern canvas for notes, drawing, and annotations",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f9fb",
+  "theme_color": "#3366cc",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}
