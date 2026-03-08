@@ -339,7 +339,7 @@ export function useFabricCanvas() {
         const rect = (canvas.getElement?.() || el).getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
-        canvas.zoomToPoint({ x, y }, newZoom);
+        canvas.zoomToPoint(new Point(x, y), newZoom);
         setZoom(newZoom);
       } else {
         // Pan
