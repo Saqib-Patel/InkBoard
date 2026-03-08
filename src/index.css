@@ -165,9 +165,21 @@
     opacity: 1;
   }
 
-  .canvas-grid {
+  .canvas-grid-dots {
     background-image: radial-gradient(circle, hsl(var(--grid-color)) 1px, transparent 1px);
     background-size: 24px 24px;
+  }
+
+  .canvas-grid-lines {
+    background-image:
+      linear-gradient(hsl(var(--grid-color) / 0.3) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--grid-color) / 0.3) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+
+  .canvas-grid-ruled {
+    background-image: linear-gradient(hsl(var(--grid-color) / 0.25) 1px, transparent 1px);
+    background-size: 100% 32px;
   }
 
   .brand-text {
