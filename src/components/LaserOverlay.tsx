@@ -75,9 +75,9 @@ export default function LaserOverlay({ active }: LaserOverlayProps) {
     if (pos && active) {
       // Outer glow
       const gradient = ctx.createRadialGradient(pos.x, pos.y, CORE_RADIUS, pos.x, pos.y, GLOW_RADIUS);
-      gradient.addColorStop(0, 'rgba(255, 80, 40, 0.5)');
-      gradient.addColorStop(0.5, 'rgba(255, 50, 20, 0.2)');
-      gradient.addColorStop(1, 'rgba(255, 30, 10, 0)');
+      gradient.addColorStop(0, 'rgba(255, 30, 20, 0.7)');
+      gradient.addColorStop(0.4, 'rgba(255, 20, 10, 0.35)');
+      gradient.addColorStop(1, 'rgba(255, 10, 5, 0)');
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, GLOW_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = gradient;
@@ -85,9 +85,9 @@ export default function LaserOverlay({ active }: LaserOverlayProps) {
 
       // Inner bright core
       const coreGrad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, CORE_RADIUS);
-      coreGrad.addColorStop(0, 'rgba(255, 255, 220, 0.95)');
-      coreGrad.addColorStop(0.4, 'rgba(255, 100, 50, 0.9)');
-      coreGrad.addColorStop(1, 'rgba(255, 40, 20, 0.6)');
+      coreGrad.addColorStop(0, 'rgba(255, 255, 240, 1)');
+      coreGrad.addColorStop(0.3, 'rgba(255, 80, 40, 0.95)');
+      coreGrad.addColorStop(1, 'rgba(220, 20, 10, 0.8)');
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, CORE_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = coreGrad;
