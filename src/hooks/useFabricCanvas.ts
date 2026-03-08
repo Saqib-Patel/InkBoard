@@ -318,15 +318,13 @@ export function useFabricCanvas() {
 
   // --- Infinite canvas (mouse wheel pan + zoom) ---
   useEffect(() => {
-    const el = canvasElRef.current;
-    if (!el) return;
-    // Use the wrapper element that Fabric creates (upper-canvas)
-    const wrapper = el.parentElement;
-    const target = wrapper || el;
+    const canvas = fc();
+    if (!canvas) return;
+    // Fabric creates an upper-canvas that receives all pointer events
+    const upperCanvas = canvas.upperCanvasEl || canvas.getElement();
+    if (!upperCanvas) return;
 
     const handleWheel = (e: WheelEvent) => {
-      const canvas = fc();
-      if (!canvas) return;
       e.preventDefault();
       e.stopPropagation();
 
@@ -335,8 +333,7 @@ export function useFabricCanvas() {
         const delta = e.deltaY;
         let newZoom = canvas.getZoom() * (1 - delta / 300);
         newZoom = Math.max(0.1, Math.min(5, newZoom));
-        // Get point relative to canvas
-        const rect = (canvas.getElement?.() || el).getBoundingClientRect();
+        const rect = upperCanvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
         canvas.zoomToPoint(new Point(x, y), newZoom);
@@ -350,8 +347,8 @@ export function useFabricCanvas() {
       }
       canvas.renderAll();
     };
-    target.addEventListener('wheel', handleWheel, { passive: false });
-    return () => { target.removeEventListener('wheel', handleWheel); };
+    upperCanvas.addEventListener('wheel', handleWheel, { passive: false });
+    return () => { upperCanvas.removeEventListener('wheel', handleWheel); };
   }, []);
 
   // --- Stylus pressure sensitivity ---
