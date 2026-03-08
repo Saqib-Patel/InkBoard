@@ -8,6 +8,7 @@ import KeyboardCheatsheet from '@/components/KeyboardCheatsheet';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import Minimap from '@/components/Minimap';
 import CanvasScrollbars from '@/components/CanvasScrollbars';
+import LoadingScreen from '@/components/LoadingScreen';
 import type { GridStyle } from '@/components/SettingsPanel';
 import {
   ChevronLeft, ChevronRight, Plus, Maximize, Minimize,
@@ -41,7 +42,7 @@ const Index = () => {
   const [loaded, setLoaded] = useState(false);
   const [autoSaveInterval, setAutoSaveInterval] = useState(30);
   const [showBgPicker, setShowBgPicker] = useState(false);
-
+  const [showLoading, setShowLoading] = useState(true);
   // Dark mode
   useEffect(() => {
     document.documentElement.classList.toggle('dark', darkMode);
@@ -123,6 +124,7 @@ const Index = () => {
 
   return (
     <ErrorBoundary>
+      {showLoading && <LoadingScreen onFinish={() => setShowLoading(false)} />}
       <div className={`fixed inset-0 canvas-gradient overflow-hidden transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}>
         <WelcomeTooltip />
         <KeyboardCheatsheet />
