@@ -160,11 +160,14 @@ const Index = () => {
         {/* Bottom bar */}
         <div className="fixed bottom-4 left-4 right-4 flex items-end justify-between z-30 pointer-events-none">
           {/* Brand */}
-          <div className="flex items-center gap-2 pointer-events-auto select-none">
-            <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-primary">
-              <PenTool size={14} className="text-primary-foreground" />
+          <div className="flex flex-col pointer-events-auto select-none">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-primary">
+                <PenTool size={14} className="text-primary-foreground" />
+              </div>
+              <span className="text-sm font-semibold brand-text tracking-tight">InkBoard</span>
             </div>
-            <span className="text-sm font-semibold brand-text tracking-tight">InkBoard</span>
+            <span className="text-[9px] text-muted-foreground/60 ml-9">by Mohammed Saqib</span>
           </div>
 
           {/* Page navigation + zoom */}
