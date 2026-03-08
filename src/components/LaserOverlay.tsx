@@ -10,9 +10,9 @@ interface LaserOverlayProps {
   active: boolean;
 }
 
-const TRAIL_DURATION = 1500; // ms
-const CORE_RADIUS = 5;
-const GLOW_RADIUS = 18;
+const TRAIL_DURATION = 1500;
+const CORE_RADIUS = 7;
+const GLOW_RADIUS = 28;
 
 export default function LaserOverlay({ active }: LaserOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -55,8 +55,8 @@ export default function LaserOverlay({ active }: LaserOverlayProps) {
         ctx.beginPath();
         ctx.moveTo(p0.x, p0.y);
         ctx.lineTo(p1.x, p1.y);
-        ctx.strokeStyle = `rgba(255, 60, 30, ${alpha * 0.6})`;
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = `rgba(220, 20, 20, ${alpha * 0.9})`;
+        ctx.lineWidth = 4;
         ctx.lineCap = 'round';
         ctx.stroke();
 
@@ -64,8 +64,8 @@ export default function LaserOverlay({ active }: LaserOverlayProps) {
         ctx.beginPath();
         ctx.moveTo(p0.x, p0.y);
         ctx.lineTo(p1.x, p1.y);
-        ctx.strokeStyle = `rgba(255, 100, 50, ${alpha * 0.15})`;
-        ctx.lineWidth = 10;
+        ctx.strokeStyle = `rgba(255, 50, 30, ${alpha * 0.35})`;
+        ctx.lineWidth = 14;
         ctx.stroke();
       }
     }
@@ -75,9 +75,9 @@ export default function LaserOverlay({ active }: LaserOverlayProps) {
     if (pos && active) {
       // Outer glow
       const gradient = ctx.createRadialGradient(pos.x, pos.y, CORE_RADIUS, pos.x, pos.y, GLOW_RADIUS);
-      gradient.addColorStop(0, 'rgba(255, 80, 40, 0.5)');
-      gradient.addColorStop(0.5, 'rgba(255, 50, 20, 0.2)');
-      gradient.addColorStop(1, 'rgba(255, 30, 10, 0)');
+      gradient.addColorStop(0, 'rgba(255, 30, 20, 0.7)');
+      gradient.addColorStop(0.4, 'rgba(255, 20, 10, 0.35)');
+      gradient.addColorStop(1, 'rgba(255, 10, 5, 0)');
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, GLOW_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = gradient;
@@ -85,9 +85,9 @@ export default function LaserOverlay({ active }: LaserOverlayProps) {
 
       // Inner bright core
       const coreGrad = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, CORE_RADIUS);
-      coreGrad.addColorStop(0, 'rgba(255, 255, 220, 0.95)');
-      coreGrad.addColorStop(0.4, 'rgba(255, 100, 50, 0.9)');
-      coreGrad.addColorStop(1, 'rgba(255, 40, 20, 0.6)');
+      coreGrad.addColorStop(0, 'rgba(255, 255, 240, 1)');
+      coreGrad.addColorStop(0.3, 'rgba(255, 80, 40, 0.95)');
+      coreGrad.addColorStop(1, 'rgba(220, 20, 10, 0.8)');
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, CORE_RADIUS, 0, Math.PI * 2);
       ctx.fillStyle = coreGrad;
@@ -148,7 +148,7 @@ export default function LaserOverlay({ active }: LaserOverlayProps) {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 pointer-events-none z-50"
-      style={{ mixBlendMode: 'screen' }}
+      style={{ mixBlendMode: 'multiply' }}
     />
   );
 }
