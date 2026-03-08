@@ -335,12 +335,10 @@ export function useFabricCanvas() {
         setZoom(newZoom);
       } else {
         // Pan
-        const vpt = canvas.viewportTransform;
-        if (vpt) {
-          vpt[4] -= e.deltaX;
-          vpt[5] -= e.deltaY;
-          canvas.setViewportTransform(vpt);
-        }
+        const vpt = [...canvas.viewportTransform] as typeof canvas.viewportTransform;
+        vpt[4] -= e.deltaX || 0;
+        vpt[5] -= e.deltaY || 0;
+        canvas.setViewportTransform(vpt);
       }
       canvas.renderAll();
     };
