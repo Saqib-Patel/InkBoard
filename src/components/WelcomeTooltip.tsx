@@ -32,7 +32,7 @@ export default function WelcomeTooltip() {
           <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'hsl(var(--tool-active))' }}>
             <Sparkles size={20} className="text-primary-foreground" />
           </div>
-          <h2 className="text-xl font-bold text-foreground">Welcome to NoteCanvas</h2>
+          <h2 className="text-xl font-bold text-foreground">Welcome to InkBoard</h2>
         </div>
         <p className="text-muted-foreground mb-4 leading-relaxed">
           A modern note-taking canvas for educators and students. Draw, annotate, and create beautiful notes.

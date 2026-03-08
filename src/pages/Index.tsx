@@ -164,7 +164,7 @@ const Index = () => {
             <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-primary">
               <PenTool size={14} className="text-primary-foreground" />
             </div>
-            <span className="text-sm font-semibold brand-text tracking-tight">NoteCanvas</span>
+            <span className="text-sm font-semibold brand-text tracking-tight">InkBoard</span>
           </div>
 
           {/* Page navigation + zoom */}

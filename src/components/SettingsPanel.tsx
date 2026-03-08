@@ -146,7 +146,7 @@ export default function SettingsPanel({
                 <Info size={16} /> About
               </div>
               <p className="text-xs text-muted-foreground">
-                NoteCanvas v1.0.0 — A modern canvas for notes, drawing, and annotations.
+                InkBoard v1.0.0 — A modern infinite canvas for drawing, notes, and annotations.
                 Built with React, Fabric.js, and Tailwind CSS.
               </p>
             </div>

@@ -776,7 +776,7 @@ export function useFabricCanvas() {
   const saveAsImage = useCallback(() => {
     const canvas = fc();
     if (!canvas) return;
-    const defaultName = `notecanvas-page${currentPage + 1}`;
+    const defaultName = `inkboard-page${currentPage + 1}`;
     const fileName = prompt('Enter file name:', defaultName);
     if (!fileName) return;
     const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 2 });
@@ -789,7 +789,7 @@ export function useFabricCanvas() {
   const saveAsPdf = useCallback(async () => {
     const canvas = fc();
     if (!canvas) return;
-    const defaultName = `notecanvas-page${currentPage + 1}`;
+    const defaultName = `inkboard-page${currentPage + 1}`;
     const fileName = prompt('Enter file name:', defaultName);
     if (!fileName) return;
     const { jsPDF } = await import('jspdf');
@@ -804,7 +804,7 @@ export function useFabricCanvas() {
   const saveAsSvg = useCallback(() => {
     const canvas = fc();
     if (!canvas) return;
-    const defaultName = `notecanvas-page${currentPage + 1}`;
+    const defaultName = `inkboard-page${currentPage + 1}`;
     const fileName = prompt('Enter file name:', defaultName);
     if (!fileName) return;
     const svg = canvas.toSVG();
