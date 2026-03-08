@@ -144,13 +144,13 @@ const Index = () => {
 
         {/* Canvas */}
         <div className="relative w-full h-full">
-          {gridStyle !== 'plain' && (
-            <div className={`absolute inset-0 ${gridClass} pointer-events-none z-10`} />
-          )}
           <canvas
             ref={canvasRef}
             className={`w-full h-full ${tool === 'laser' ? 'cursor-none' : tool === 'pan' ? 'cursor-grab' : ''}`}
           />
+          {gridStyle !== 'plain' && (
+            <div className={`absolute inset-0 ${gridClass} pointer-events-none z-10`} />
+          )}
         </div>
 
         <LaserOverlay active={tool === 'laser'} />
