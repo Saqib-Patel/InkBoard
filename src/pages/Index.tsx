@@ -155,6 +155,7 @@ const Index = () => {
 
         <LaserOverlay active={tool === 'laser'} />
         <Minimap getDataUrl={getMinimapDataUrl} zoom={zoom} />
+        <CanvasScrollbars zoom={zoom} viewportTransform={getViewportTransform()} onPan={panBy} />
 
         {/* Bottom bar */}
         <div className="fixed bottom-4 left-4 right-4 flex items-end justify-between z-30 pointer-events-none">
