@@ -531,7 +531,7 @@ export function useFabricCanvas() {
         fill: stickyColor,
         rx: 4,
         ry: 4,
-        shadow: '2px 4px 10px rgba(0,0,0,0.15)',
+        shadow: new (await import('fabric')).Shadow({ color: 'rgba(0,0,0,0.15)', blur: 10, offsetX: 2, offsetY: 4 }),
         selectable: true,
         evented: true,
       });
