@@ -66,6 +66,28 @@ export function useFabricCanvas() {
     canvas.freeDrawingBrush.color = '#1a1a2e';
     canvas.freeDrawingBrush.width = 6;
 
+    // Wheel pan + zoom (attached here so canvas is guaranteed to exist)
+    canvas.on('mouse:wheel', (opt: any) => {
+      const e = opt.e as WheelEvent;
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (e.ctrlKey || e.metaKey) {
+        const delta = e.deltaY;
+        let newZoom = canvas.getZoom() * (1 - delta / 300);
+        newZoom = Math.max(0.1, Math.min(5, newZoom));
+        const pointer = canvas.getScenePoint(e);
+        canvas.zoomToPoint(pointer, newZoom);
+        setZoom(newZoom);
+      } else {
+        const vpt = [...canvas.viewportTransform] as typeof canvas.viewportTransform;
+        vpt[4] -= e.deltaX || 0;
+        vpt[5] -= e.deltaY || 0;
+        canvas.setViewportTransform(vpt);
+      }
+      canvas.renderAll();
+    });
+
     fabricRef.current = canvas;
     saveHistoryState();
   // eslint-disable-next-line react-hooks/exhaustive-deps
