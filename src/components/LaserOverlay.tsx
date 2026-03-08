@@ -55,8 +55,8 @@ export default function LaserOverlay({ active }: LaserOverlayProps) {
         ctx.beginPath();
         ctx.moveTo(p0.x, p0.y);
         ctx.lineTo(p1.x, p1.y);
-        ctx.strokeStyle = `rgba(255, 60, 30, ${alpha * 0.6})`;
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = `rgba(220, 20, 20, ${alpha * 0.9})`;
+        ctx.lineWidth = 4;
         ctx.lineCap = 'round';
         ctx.stroke();
 
@@ -64,8 +64,8 @@ export default function LaserOverlay({ active }: LaserOverlayProps) {
         ctx.beginPath();
         ctx.moveTo(p0.x, p0.y);
         ctx.lineTo(p1.x, p1.y);
-        ctx.strokeStyle = `rgba(255, 100, 50, ${alpha * 0.15})`;
-        ctx.lineWidth = 10;
+        ctx.strokeStyle = `rgba(255, 50, 30, ${alpha * 0.35})`;
+        ctx.lineWidth = 14;
         ctx.stroke();
       }
     }
