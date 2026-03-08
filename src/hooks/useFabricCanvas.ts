@@ -438,9 +438,12 @@ export function useFabricCanvas() {
   const saveAsImage = useCallback(() => {
     const canvas = fc();
     if (!canvas) return;
+    const defaultName = `notecanvas-page${currentPage + 1}`;
+    const fileName = prompt('Enter file name:', defaultName);
+    if (!fileName) return;
     const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 2 });
     const link = document.createElement('a');
-    link.download = `notecanvas-page${currentPage + 1}-${Date.now()}.png`;
+    link.download = `${fileName}.png`;
     link.href = dataUrl;
     link.click();
   }, [currentPage]);
@@ -448,23 +451,29 @@ export function useFabricCanvas() {
   const saveAsPdf = useCallback(async () => {
     const canvas = fc();
     if (!canvas) return;
+    const defaultName = `notecanvas-page${currentPage + 1}`;
+    const fileName = prompt('Enter file name:', defaultName);
+    if (!fileName) return;
     const { jsPDF } = await import('jspdf');
     const dataUrl = canvas.toDataURL({ format: 'png', multiplier: 2 });
     const w = canvas.getWidth();
     const h = canvas.getHeight();
     const pdf = new jsPDF({ orientation: w > h ? 'landscape' : 'portrait', unit: 'px', format: [w, h] });
     pdf.addImage(dataUrl, 'PNG', 0, 0, w, h);
-    pdf.save(`notecanvas-page${currentPage + 1}-${Date.now()}.pdf`);
+    pdf.save(`${fileName}.pdf`);
   }, [currentPage]);
 
   const saveAsSvg = useCallback(() => {
     const canvas = fc();
     if (!canvas) return;
+    const defaultName = `notecanvas-page${currentPage + 1}`;
+    const fileName = prompt('Enter file name:', defaultName);
+    if (!fileName) return;
     const svg = canvas.toSVG();
     const blob = new Blob([svg], { type: 'image/svg+xml' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.download = `notecanvas-page${currentPage + 1}-${Date.now()}.svg`;
+    link.download = `${fileName}.svg`;
     link.href = url;
     link.click();
     URL.revokeObjectURL(url);
