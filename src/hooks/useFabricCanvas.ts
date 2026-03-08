@@ -1,7 +1,7 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { Canvas, PencilBrush, FabricObject, Rect, Ellipse, Line, Textbox, Polygon, type TPointerEventInfo } from 'fabric';
+import { Canvas, PencilBrush, FabricObject, Rect, Ellipse, Line, Textbox, Polygon, FabricImage, Shadow, type TPointerEventInfo } from 'fabric';
 
-export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'text' | 'rectangle' | 'circle' | 'triangle' | 'arrow' | 'laser';
+export type Tool = 'select' | 'pen' | 'highlighter' | 'eraser' | 'text' | 'rectangle' | 'circle' | 'triangle' | 'arrow' | 'laser' | 'sticky' | 'pan';
 export type BrushSize = 'small' | 'medium' | 'large';
 
 interface PageData {
@@ -9,6 +9,8 @@ interface PageData {
 }
 
 const STORAGE_KEY = 'notesapp_fabric_pages';
+
+const STICKY_COLORS = ['#FEF3C7', '#DBEAFE', '#D1FAE5', '#FCE7F3', '#EDE9FE'];
 
 export function useFabricCanvas() {
   const canvasElRef = useRef<HTMLCanvasElement>(null);
@@ -24,10 +26,14 @@ export function useFabricCanvas() {
   const [currentPage, setCurrentPage] = useState(0);
   const [pages, setPages] = useState<PageData[]>([]);
   const [zoom, setZoom] = useState(1);
+  const [canvasBgColor, setCanvasBgColor] = useState('#ffffff');
 
   const shapeStart = useRef<{ x: number; y: number } | null>(null);
   const activeShape = useRef<FabricObject | null>(null);
   const shiftHeld = useRef(false);
+  const clipboard = useRef<FabricObject[] | null>(null);
+  const panStart = useRef<{ x: number; y: number } | null>(null);
+  const isPanning = useRef(false);
 
   const fc = () => fabricRef.current;
 
@@ -51,7 +57,7 @@ export function useFabricCanvas() {
 
     const canvas = new Canvas(canvasElRef.current, {
       width: w, height: h,
-      backgroundColor: '#ffffff',
+      backgroundColor: canvasBgColor,
       isDrawingMode: true,
       selection: false,
     });
@@ -62,6 +68,7 @@ export function useFabricCanvas() {
 
     fabricRef.current = canvas;
     saveHistoryState();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -168,6 +175,7 @@ export function useFabricCanvas() {
     const canvas = fc();
     if (!canvas) return;
     canvas.setZoom(1);
+    canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
     setZoom(1);
     canvas.renderAll();
   }, []);
@@ -179,13 +187,11 @@ export function useFabricCanvas() {
     canvas.discardActiveObject();
     const objs = canvas.getObjects();
     if (objs.length === 0) return;
-    // Select all objects
     objs.forEach(o => { o.selectable = true; o.evented = true; });
     canvas.setActiveObject(objs[0]);
     canvas.requestRenderAll();
   }, []);
 
-  // Since ActiveSelection might need special import, use inline approach
   const deleteSelected = useCallback(() => {
     const canvas = fc();
     if (!canvas) return;
@@ -197,6 +203,169 @@ export function useFabricCanvas() {
       saveHistoryState();
     }
   }, [saveHistoryState]);
+
+  // --- Copy / Paste / Duplicate ---
+  const copySelected = useCallback(() => {
+    const canvas = fc();
+    if (!canvas) return;
+    const active = canvas.getActiveObjects();
+    if (active.length === 0) return;
+    // Clone objects
+    Promise.all(active.map(obj => obj.clone())).then(clones => {
+      clipboard.current = clones;
+    });
+  }, []);
+
+  const pasteClipboard = useCallback(() => {
+    const canvas = fc();
+    if (!canvas || !clipboard.current) return;
+    Promise.all(clipboard.current.map(obj => obj.clone())).then(clones => {
+      clones.forEach(clone => {
+        clone.set({ left: (clone.left || 0) + 20, top: (clone.top || 0) + 20 });
+        canvas.add(clone);
+      });
+      canvas.renderAll();
+      saveHistoryState();
+    });
+  }, [saveHistoryState]);
+
+  const duplicateSelected = useCallback(() => {
+    const canvas = fc();
+    if (!canvas) return;
+    const active = canvas.getActiveObjects();
+    if (active.length === 0) return;
+    Promise.all(active.map(obj => obj.clone())).then(clones => {
+      canvas.discardActiveObject();
+      clones.forEach(clone => {
+        clone.set({ left: (clone.left || 0) + 20, top: (clone.top || 0) + 20 });
+        canvas.add(clone);
+      });
+      canvas.renderAll();
+      saveHistoryState();
+    });
+  }, [saveHistoryState]);
+
+  // --- Image import ---
+  const addImageToCanvas = useCallback((dataUrl: string) => {
+    const canvas = fc();
+    if (!canvas) return;
+    const imgEl = new Image();
+    imgEl.onload = () => {
+      const fabricImg = new FabricImage(imgEl, {
+        left: 100,
+        top: 100,
+        scaleX: Math.min(1, 600 / imgEl.width),
+        scaleY: Math.min(1, 600 / imgEl.width),
+      });
+      canvas.add(fabricImg);
+      canvas.setActiveObject(fabricImg);
+      canvas.renderAll();
+      saveHistoryState();
+    };
+    imgEl.src = dataUrl;
+  }, [saveHistoryState]);
+
+  // Paste image from clipboard
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (!file) continue;
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            if (ev.target?.result) addImageToCanvas(ev.target.result as string);
+          };
+          reader.readAsDataURL(file);
+          break;
+        }
+      }
+    };
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [addImageToCanvas]);
+
+  // Drag & drop image
+  useEffect(() => {
+    const el = canvasElRef.current?.parentElement;
+    if (!el) return;
+    const handleDragOver = (e: DragEvent) => { e.preventDefault(); e.stopPropagation(); };
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const files = e.dataTransfer?.files;
+      if (!files) return;
+      for (const file of files) {
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            if (ev.target?.result) addImageToCanvas(ev.target.result as string);
+          };
+          reader.readAsDataURL(file);
+        }
+      }
+    };
+    el.addEventListener('dragover', handleDragOver);
+    el.addEventListener('drop', handleDrop);
+    return () => {
+      el.removeEventListener('dragover', handleDragOver);
+      el.removeEventListener('drop', handleDrop);
+    };
+  }, [addImageToCanvas]);
+
+  // --- Infinite canvas (mouse wheel pan + zoom) ---
+  useEffect(() => {
+    const canvas = fc();
+    if (!canvas) return;
+    const handleWheel = (opt: any) => {
+      const e = opt.e as WheelEvent;
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (e.ctrlKey || e.metaKey) {
+        // Pinch zoom
+        const delta = e.deltaY;
+        let newZoom = canvas.getZoom() * (1 - delta / 300);
+        newZoom = Math.max(0.1, Math.min(5, newZoom));
+        const point = canvas.getViewportPoint(e);
+        canvas.zoomToPoint(point, newZoom);
+        setZoom(newZoom);
+      } else {
+        // Pan
+        const vpt = canvas.viewportTransform;
+        if (vpt) {
+          vpt[4] -= e.deltaX;
+          vpt[5] -= e.deltaY;
+          canvas.setViewportTransform(vpt);
+        }
+      }
+      canvas.renderAll();
+    };
+    canvas.on('mouse:wheel', handleWheel);
+    return () => { canvas.off('mouse:wheel', handleWheel); };
+  }, []);
+
+  // --- Stylus pressure sensitivity ---
+  useEffect(() => {
+    const canvas = fc();
+    if (!canvas) return;
+    const el = canvas.getSelectionElement?.() || canvasElRef.current;
+    if (!el) return;
+
+    const handlePointerMove = (e: PointerEvent) => {
+      if (e.pointerType === 'pen' && e.pressure > 0 && canvas.freeDrawingBrush) {
+        const baseBrushWidth = customSize;
+        const pressureWidth = baseBrushWidth * (0.3 + e.pressure * 1.4);
+        canvas.freeDrawingBrush.width = Math.max(1, pressureWidth);
+      }
+    };
+
+    el.addEventListener('pointermove', handlePointerMove);
+    return () => el.removeEventListener('pointermove', handlePointerMove);
+  }, [customSize]);
 
   // --- Tool switching ---
   const setTool = useCallback((t: Tool) => {
@@ -216,6 +385,15 @@ export function useFabricCanvas() {
       return;
     }
 
+    if (t === 'pan') {
+      canvas.isDrawingMode = false;
+      canvas.selection = false;
+      canvas.forEachObject(o => { o.selectable = false; o.evented = false; });
+      canvas.defaultCursor = 'grab';
+      setupPanTool(canvas);
+      return;
+    }
+
     if (t === 'pen' || t === 'highlighter' || t === 'eraser') {
       canvas.isDrawingMode = true;
       canvas.selection = false;
@@ -223,7 +401,7 @@ export function useFabricCanvas() {
 
       if (t === 'eraser') {
         canvas.freeDrawingBrush = new PencilBrush(canvas);
-        canvas.freeDrawingBrush.color = '#ffffff';
+        canvas.freeDrawingBrush.color = canvasBgColor;
         canvas.freeDrawingBrush.width = customSize * 3;
       } else if (t === 'highlighter') {
         canvas.freeDrawingBrush = new PencilBrush(canvas);
@@ -245,13 +423,42 @@ export function useFabricCanvas() {
     if (t === 'text') {
       canvas.defaultCursor = 'text';
       setupTextTool(canvas);
+    } else if (t === 'sticky') {
+      canvas.defaultCursor = 'crosshair';
+      setupStickyTool(canvas);
     } else if (t === 'rectangle' || t === 'circle' || t === 'arrow' || t === 'triangle') {
       canvas.defaultCursor = 'crosshair';
       setupShapeTool(canvas, t);
     } else if (t === 'laser') {
       canvas.defaultCursor = 'none';
     }
-  }, [color, customSize]);
+  }, [color, customSize, canvasBgColor]);
+
+  // --- Pan tool ---
+  const setupPanTool = (canvas: Canvas) => {
+    canvas.on('mouse:down', (opt: TPointerEventInfo) => {
+      isPanning.current = true;
+      const ev = opt.e instanceof TouchEvent ? opt.e.touches[0] : opt.e;
+      panStart.current = { x: ev.clientX, y: ev.clientY };
+      canvas.defaultCursor = 'grabbing';
+    });
+    canvas.on('mouse:move', (opt: TPointerEventInfo) => {
+      if (!isPanning.current || !panStart.current) return;
+      const ev = opt.e instanceof TouchEvent ? opt.e.touches[0] : opt.e;
+      const vpt = canvas.viewportTransform;
+      if (vpt) {
+        vpt[4] += ev.clientX - panStart.current.x;
+        vpt[5] += ev.clientY - panStart.current.y;
+        canvas.setViewportTransform(vpt);
+        panStart.current = { x: ev.clientX, y: ev.clientY };
+      }
+    });
+    canvas.on('mouse:up', () => {
+      isPanning.current = false;
+      panStart.current = null;
+      canvas.defaultCursor = 'grab';
+    });
+  };
 
   // Post-draw: apply opacity for highlighter/pen
   useEffect(() => {
@@ -284,10 +491,10 @@ export function useFabricCanvas() {
       canvas.freeDrawingBrush.width = Math.max(customSize * 4, 20);
       (canvas.freeDrawingBrush as any).strokeLineCap = 'butt';
     } else if (tool === 'eraser') {
-      canvas.freeDrawingBrush.color = '#ffffff';
+      canvas.freeDrawingBrush.color = canvasBgColor;
       canvas.freeDrawingBrush.width = customSize * 3;
     }
-  }, [color, customSize, tool]);
+  }, [color, customSize, tool, canvasBgColor]);
 
   // --- Text tool ---
   const setupTextTool = (canvas: Canvas) => {
@@ -304,6 +511,47 @@ export function useFabricCanvas() {
       canvas.add(textbox);
       canvas.setActiveObject(textbox);
       textbox.enterEditing();
+      canvas.off('mouse:down');
+    });
+  };
+
+  // --- Sticky note tool ---
+  const setupStickyTool = (canvas: Canvas) => {
+    canvas.on('mouse:down', (opt: TPointerEventInfo) => {
+      const pointer = canvas.getViewportPoint(opt.e);
+      const stickyColor = STICKY_COLORS[Math.floor(Math.random() * STICKY_COLORS.length)];
+      const stickySize = 180;
+
+      // Background rect
+      const bg = new Rect({
+        left: pointer.x,
+        top: pointer.y,
+        width: stickySize,
+        height: stickySize,
+        fill: stickyColor,
+        rx: 4,
+        ry: 4,
+        shadow: new Shadow({ color: 'rgba(0,0,0,0.15)', blur: 10, offsetX: 2, offsetY: 4 }),
+        selectable: true,
+        evented: true,
+      });
+
+      // Text on the sticky
+      const text = new Textbox('Note...', {
+        left: pointer.x + 12,
+        top: pointer.y + 12,
+        width: stickySize - 24,
+        fontSize: 14,
+        fill: '#1a1a2e',
+        fontFamily: 'Inter, sans-serif',
+        editable: true,
+        selectable: true,
+      });
+
+      canvas.add(bg);
+      canvas.add(text);
+      canvas.setActiveObject(text);
+      text.enterEditing();
       canvas.off('mouse:down');
     });
   };
@@ -343,7 +591,6 @@ export function useFabricCanvas() {
       let dx = pointer.x - sx;
       let dy = pointer.y - sy;
 
-      // Shift constrain
       if (shiftHeld.current && (shapeTool === 'rectangle' || shapeTool === 'circle' || shapeTool === 'triangle')) {
         const size = Math.max(Math.abs(dx), Math.abs(dy));
         dx = size * Math.sign(dx || 1);
@@ -379,12 +626,10 @@ export function useFabricCanvas() {
           left: Math.min(sx, endX),
           top: sy,
         });
-        // Force coordinate update
         (tri as any).setCoords?.();
       } else {
         const line = activeShape.current as Line;
         if (shiftHeld.current) {
-          // Snap to 45-degree angles
           const angle = Math.atan2(dy, dx);
           const snapAngle = Math.round(angle / (Math.PI / 4)) * (Math.PI / 4);
           const dist = Math.sqrt(dx * dx + dy * dy);
@@ -424,15 +669,117 @@ export function useFabricCanvas() {
     });
   };
 
+  // --- Snap/alignment guides ---
+  useEffect(() => {
+    const canvas = fc();
+    if (!canvas) return;
+    const guidelines: Line[] = [];
+    const SNAP_THRESHOLD = 8;
+
+    const clearGuidelines = () => {
+      guidelines.forEach(g => canvas.remove(g));
+      guidelines.length = 0;
+    };
+
+    const onMoving = (e: any) => {
+      const target = e.target as FabricObject;
+      if (!target) return;
+      clearGuidelines();
+
+      const tl = target.left || 0;
+      const tt = target.top || 0;
+      const tw = (target.width || 0) * (target.scaleX || 1);
+      const th = (target.height || 0) * (target.scaleY || 1);
+      const tCenterX = tl + tw / 2;
+      const tCenterY = tt + th / 2;
+
+      const cw = canvas.getWidth();
+      const ch = canvas.getHeight();
+
+      // Canvas center guides
+      const checks = [
+        { val: tCenterX, snap: cw / 2, axis: 'x' as const },
+        { val: tCenterY, snap: ch / 2, axis: 'y' as const },
+        { val: tl, snap: 0, axis: 'x' as const },
+        { val: tt, snap: 0, axis: 'y' as const },
+      ];
+
+      // Compare with other objects
+      canvas.getObjects().forEach(obj => {
+        if (obj === target || (obj as any)._isGuideline) return;
+        const ol = obj.left || 0;
+        const ot = obj.top || 0;
+        const ow = (obj.width || 0) * (obj.scaleX || 1);
+        const oh = (obj.height || 0) * (obj.scaleY || 1);
+
+        checks.push(
+          { val: tl, snap: ol, axis: 'x' },
+          { val: tl, snap: ol + ow, axis: 'x' },
+          { val: tl + tw, snap: ol, axis: 'x' },
+          { val: tl + tw, snap: ol + ow, axis: 'x' },
+          { val: tCenterX, snap: ol + ow / 2, axis: 'x' },
+          { val: tt, snap: ot, axis: 'y' },
+          { val: tt, snap: ot + oh, axis: 'y' },
+          { val: tt + th, snap: ot, axis: 'y' },
+          { val: tt + th, snap: ot + oh, axis: 'y' },
+          { val: tCenterY, snap: ot + oh / 2, axis: 'y' },
+        );
+      });
+
+      checks.forEach(({ val, snap, axis }) => {
+        if (Math.abs(val - snap) < SNAP_THRESHOLD) {
+          // Snap the object
+          if (axis === 'x') {
+            const diff = snap - val;
+            target.set({ left: tl + diff });
+          } else {
+            const diff = snap - val;
+            target.set({ top: tt + diff });
+          }
+          // Draw guideline
+          const line = axis === 'x'
+            ? new Line([snap, 0, snap, ch], { stroke: '#3b82f6', strokeWidth: 1, selectable: false, evented: false, strokeDashArray: [4, 4] })
+            : new Line([0, snap, cw, snap], { stroke: '#3b82f6', strokeWidth: 1, selectable: false, evented: false, strokeDashArray: [4, 4] });
+          (line as any)._isGuideline = true;
+          canvas.add(line);
+          guidelines.push(line);
+        }
+      });
+      canvas.renderAll();
+    };
+
+    const onModified = () => { clearGuidelines(); canvas.renderAll(); };
+
+    canvas.on('object:moving', onMoving);
+    canvas.on('object:modified', onModified);
+    canvas.on('mouse:up', onModified);
+
+    return () => {
+      canvas.off('object:moving', onMoving);
+      canvas.off('object:modified', onModified);
+      canvas.off('mouse:up', onModified);
+    };
+  }, []);
+
+  // --- Background color ---
+  const changeCanvasBg = useCallback((newColor: string) => {
+    setCanvasBgColor(newColor);
+    const canvas = fc();
+    if (canvas) {
+      canvas.backgroundColor = newColor;
+      canvas.renderAll();
+    }
+  }, []);
+
   // --- Clear ---
   const clearCanvas = useCallback(() => {
     const canvas = fc();
     if (!canvas) return;
     canvas.clear();
-    canvas.backgroundColor = '#ffffff';
+    canvas.backgroundColor = canvasBgColor;
     canvas.renderAll();
     saveHistoryState();
-  }, [saveHistoryState]);
+  }, [saveHistoryState, canvasBgColor]);
 
   // --- Export ---
   const saveAsImage = useCallback(() => {
@@ -506,13 +853,13 @@ export function useFabricCanvas() {
       });
     } else {
       canvas.clear();
-      canvas.backgroundColor = '#ffffff';
+      canvas.backgroundColor = canvasBgColor;
       canvas.renderAll();
       setHistory([]);
       setHistoryIndex(-1);
       saveHistoryState();
     }
-  }, [pages, saveHistoryState]);
+  }, [pages, saveHistoryState, canvasBgColor]);
 
   const goToPage = useCallback((pageIndex: number) => {
     saveCurrentPage();
@@ -527,13 +874,13 @@ export function useFabricCanvas() {
     const canvas = fc();
     if (canvas) {
       canvas.clear();
-      canvas.backgroundColor = '#ffffff';
+      canvas.backgroundColor = canvasBgColor;
       canvas.renderAll();
     }
     setHistory([]);
     setHistoryIndex(-1);
     saveHistoryState();
-  }, [saveCurrentPage, pages.length, currentPage, saveHistoryState]);
+  }, [saveCurrentPage, pages.length, currentPage, saveHistoryState, canvasBgColor]);
 
   const totalPages = Math.max(pages.length, currentPage + 1);
 
@@ -569,6 +916,15 @@ export function useFabricCanvas() {
     try { return !!localStorage.getItem(STORAGE_KEY); } catch { return false; }
   };
 
+  // --- Minimap data ---
+  const getMinimapDataUrl = useCallback(() => {
+    const canvas = fc();
+    if (!canvas) return '';
+    try {
+      return canvas.toDataURL({ format: 'png', multiplier: 0.15 });
+    } catch { return ''; }
+  }, []);
+
   return {
     canvasRef: canvasElRef,
     tool, setTool, color, setColor,
@@ -580,5 +936,9 @@ export function useFabricCanvas() {
     loadFromLocalStorage, hasSavedData, autoSave,
     zoom, zoomIn, zoomOut, resetZoom,
     deleteSelected,
+    copySelected, pasteClipboard, duplicateSelected,
+    addImageToCanvas,
+    canvasBgColor, changeCanvasBg,
+    getMinimapDataUrl,
   };
 }

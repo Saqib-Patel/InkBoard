@@ -6,13 +6,16 @@ import WelcomeTooltip from '@/components/WelcomeTooltip';
 import SettingsPanel from '@/components/SettingsPanel';
 import KeyboardCheatsheet from '@/components/KeyboardCheatsheet';
 import ErrorBoundary from '@/components/ErrorBoundary';
+import Minimap from '@/components/Minimap';
 import type { GridStyle } from '@/components/SettingsPanel';
 import {
   ChevronLeft, ChevronRight, Plus, Maximize, Minimize,
-  FolderOpen, PenTool, ZoomIn, ZoomOut,
+  FolderOpen, PenTool, ZoomIn, ZoomOut, Palette,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Tool } from '@/hooks/useFabricCanvas';
+
+const BG_COLORS = ['#ffffff', '#f8f9fa', '#1a1a2e', '#1e293b', '#fef3c7', '#dbeafe', '#d1fae5', '#fce7f3'];
 
 const Index = () => {
   const {
@@ -25,6 +28,9 @@ const Index = () => {
     loadFromLocalStorage, hasSavedData, autoSave,
     zoom, zoomIn, zoomOut, resetZoom,
     deleteSelected,
+    copySelected, pasteClipboard, duplicateSelected,
+    canvasBgColor, changeCanvasBg,
+    getMinimapDataUrl,
   } = useFabricCanvas();
 
   const [gridStyle, setGridStyle] = useState<GridStyle>('plain');
@@ -32,6 +38,7 @@ const Index = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [autoSaveInterval, setAutoSaveInterval] = useState(30);
+  const [showBgPicker, setShowBgPicker] = useState(false);
 
   // Dark mode
   useEffect(() => {
@@ -55,7 +62,7 @@ const Index = () => {
     const toolMap: Record<string, Tool> = {
       s: 'select', p: 'pen', h: 'highlighter', e: 'eraser',
       t: 'text', r: 'rectangle', c: 'circle', a: 'arrow',
-      l: 'laser', v: 'triangle',
+      l: 'laser', v: 'triangle', n: 'sticky',
     };
 
     // Meta shortcuts first
@@ -63,6 +70,9 @@ const Index = () => {
       if (key === 'z' && e.shiftKey) { e.preventDefault(); redo(); return; }
       if (key === 'z') { e.preventDefault(); undo(); return; }
       if (key === 's') { e.preventDefault(); autoSave(); toast.success('Saved!'); return; }
+      if (key === 'c') { e.preventDefault(); copySelected(); return; }
+      if (key === 'v') { e.preventDefault(); pasteClipboard(); return; }
+      if (key === 'd') { e.preventDefault(); duplicateSelected(); return; }
       if (key === 'a') { e.preventDefault(); return; }
       if (key === '=') { e.preventDefault(); zoomIn(); return; }
       if (key === '-') { e.preventDefault(); zoomOut(); return; }
@@ -72,10 +82,22 @@ const Index = () => {
     }
 
     if (key === 'delete' || key === 'backspace') { deleteSelected(); return; }
+    if (key === ' ') { e.preventDefault(); setTool('pan'); return; }
     if (!meta && toolMap[key]) { setTool(toolMap[key]); return; }
     if (key === 'g') { setGridStyle(prev => prev === 'plain' ? 'dots' : prev === 'dots' ? 'grid' : prev === 'grid' ? 'lines' : 'plain'); return; }
     if (key === 'f') { toggleFullscreen(); return; }
-  }, [setTool, undo, redo, autoSave, zoomIn, zoomOut, resetZoom, deleteSelected, currentPage, totalPages, goToPage, addPage]);
+  }, [setTool, undo, redo, autoSave, zoomIn, zoomOut, resetZoom, deleteSelected, currentPage, totalPages, goToPage, addPage, copySelected, pasteClipboard, duplicateSelected]);
+
+  // Release space to go back to previous tool
+  useEffect(() => {
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === ' ' && tool === 'pan') {
+        setTool('select');
+      }
+    };
+    window.addEventListener('keyup', handleKeyUp);
+    return () => window.removeEventListener('keyup', handleKeyUp);
+  }, [tool, setTool]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -125,11 +147,12 @@ const Index = () => {
           )}
           <canvas
             ref={canvasRef}
-            className={`w-full h-full ${tool === 'laser' ? 'cursor-none' : ''}`}
+            className={`w-full h-full ${tool === 'laser' ? 'cursor-none' : tool === 'pan' ? 'cursor-grab' : ''}`}
           />
         </div>
 
         <LaserOverlay active={tool === 'laser'} />
+        <Minimap getDataUrl={getMinimapDataUrl} zoom={zoom} />
 
         {/* Bottom bar */}
         <div className="fixed bottom-4 left-4 right-4 flex items-end justify-between z-30 pointer-events-none">
@@ -178,6 +201,33 @@ const Index = () => {
 
           {/* Quick controls */}
           <div className="flex items-center gap-1.5 pointer-events-auto">
+            {/* Background color picker */}
+            <div className="relative">
+              <button
+                className="page-nav-btn"
+                onClick={() => setShowBgPicker(!showBgPicker)}
+                title="Canvas background"
+                aria-label="Canvas background color"
+              >
+                <Palette size={16} />
+              </button>
+              {showBgPicker && (
+                <div className="absolute bottom-full mb-2 right-0 glass-toolbar rounded-xl p-2.5 animate-scale-in z-50">
+                  <span className="text-[10px] font-medium text-muted-foreground mb-1.5 block">Background</span>
+                  <div className="flex gap-1.5">
+                    {BG_COLORS.map(c => (
+                      <button
+                        key={c}
+                        className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${canvasBgColor === c ? 'border-primary scale-110' : 'border-border'}`}
+                        style={{ backgroundColor: c }}
+                        onClick={() => { changeCanvasBg(c); setShowBgPicker(false); }}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {hasSavedData() && (
               <button className="page-nav-btn" onClick={loadFromLocalStorage} title="Load saved notes" aria-label="Load saved notes">
                 <FolderOpen size={16} />

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import {
   Pen, Highlighter, Eraser, Undo2, Redo2, Trash2, Download,
   Circle, Type, Square, ArrowUpRight, FileDown, Pointer, MousePointer,
-  Triangle, Pipette, FileCode,
+  Triangle, Pipette, FileCode, StickyNote, Move, Copy,
 } from 'lucide-react';
 import type { Tool, BrushSize } from '@/hooks/useFabricCanvas';
 
@@ -26,6 +26,8 @@ const TOOLS: { key: Tool; icon: typeof Pen; label: string; shortcut: string }[] 
   { key: 'triangle', icon: Triangle, label: 'Triangle', shortcut: 'V' },
   { key: 'arrow', icon: ArrowUpRight, label: 'Arrow', shortcut: 'A' },
   { key: 'laser', icon: Pointer, label: 'Laser', shortcut: 'L' },
+  { key: 'sticky', icon: StickyNote, label: 'Sticky Note', shortcut: 'N' },
+  { key: 'pan', icon: Move, label: 'Pan', shortcut: 'Space' },
 ];
 
 interface ToolbarProps {
